@@ -41,7 +41,7 @@ const transporter = nodemailer.createTransport({
 // Set up Express application
 const app = express();
 // Define the port your server will listen on. Render will set process.env.PORT.
-const port = process.env.PORT || 3000; 
+const port = process.env.PORT || 3000;
 
 // --- Multer Storage Configuration ---
 // Note: 'uploads/' directory must exist or be created for Multer to work.
@@ -69,10 +69,10 @@ app.post("/voice", async (req, res) => {
 
   const twiml = new twilio.twiml.VoiceResponse();
 
-  // New Greeting for AVA
+  // New Greeting for AVA - SIMPLIFIED FOR TESTING
   twiml.say(
     { voice: "Polly.Kevin", language: "en-US" }, // Set your desired natural voice here
-    "Hi, this is AVA, I'm Alex's virtual assistant. You can leave a message with me, and I will let Alex know what you called."
+    "Hello. This is a test." // THIS LINE WAS CHANGED
   );
 
   // Record the caller's message

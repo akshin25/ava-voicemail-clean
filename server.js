@@ -71,8 +71,8 @@ app.post("/voice", async (req, res) => {
 
   // New Greeting for AVA - SIMPLIFIED FOR TESTING
   twiml.say(
-    { voice: "Polly.Kevin", language: "en-US" }, // Set your desired natural voice here
-    "Hello. This is a test." // THIS LINE WAS CHANGED
+    { voice: "alice", language: "en-US" }, // Set your desired natural voice here
+    "Hello. This is a final test." // THIS LINE WAS CHANGED
   );
 
   // Record the caller's message

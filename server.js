@@ -121,14 +121,42 @@ app.post("/recording-complete", async (req, res) => {
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const authHeader = 'Basic ' + Buffer.from(accountSid + ':' + authToken).toString('base64');
 
-    const audioResponse = await fetch(recordingUrl, {
-      headers: { 'Authorization': authHeader }
-    });
+    // NEW: Implement retry logic for fetching the audio
+    const maxRetries = 3;
+    const retryDelayMs = 2000; // 2 seconds delay
 
-    if (!audioResponse.ok) {
-        throw new Error(`Failed to fetch audio from Twilio URL: ${audioResponse.statusText} (Status: ${audioResponse.status})`);
+    let audioResponse;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        audioResponse = await fetch(recordingUrl, {
+          headers: { 'Authorization': authHeader }
+        });
+
+        if (audioResponse.ok) {
+          console.log(`✅ Recording fetched successfully on attempt ${i + 1}.`);
+          break; // Exit loop if successful
+        } else if (audioResponse.status === 404 && i < maxRetries - 1) {
+          console.warn(`⚠️ Recording not found (404) on attempt ${i + 1}. Retrying in ${retryDelayMs / 1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        } else {
+          // For other errors or last retry attempt, throw the error
+          throw new Error(`Failed to fetch audio from Twilio URL: ${audioResponse.statusText} (Status: ${audioResponse.status})`);
+        }
+      } catch (err) {
+        if (i < maxRetries - 1) {
+          console.warn(`⚠️ Error fetching recording on attempt ${i + 1}: ${err.message}. Retrying in ${retryDelayMs / 1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+        } else {
+          throw err; // Re-throw the error on the last attempt
+        }
+      }
     }
-    const audioBuffer = await audioResponse.buffer(); // Get the audio data as a Buffer
+
+    if (!audioResponse || !audioResponse.ok) {
+      // This means all retries failed or an unrecoverable error occurred
+      throw new Error("Failed to fetch audio from Twilio after multiple retries.");
+    }
+    const audioBuffer = await audioResponse.buffer();
 
     // Create a 'File' object from the buffer for OpenAI API
     const originalname = path.basename(recordingUrl).split('?')[0] || 'recording.wav';

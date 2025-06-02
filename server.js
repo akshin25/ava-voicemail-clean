@@ -7,6 +7,11 @@ const OpenAI = require("openai"); // OpenAI API client library
 const twilio = require("twilio"); // Twilio API client library - IMPORTANT for TwiML
 const nodemailer = require("nodemailer"); // NEW: For sending emails
 
+// NEW: Polyfill for fetch() in Node.js environments older than v18
+// If Render is running Node < 18, this is crucial.
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+
+
 // Polyfill for 'File' constructor in Node.js environment for OpenAI API
 // This is necessary because OpenAI's library expects a browser-like 'File' object
 // when dealing with audio files, which Node.js doesn't have natively.
@@ -47,6 +52,11 @@ const port = process.env.PORT || 3000;
 // Note: 'uploads/' directory must exist or be created for Multer to work.
 // For Render, this is temporary storage during processing.
 const upload = multer({ dest: "uploads/" });
+
+// NEW: Ensure 'uploads' directory exists for Multer
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
 
 // --- Middleware ---
 // Parse JSON and URL-encoded data
@@ -157,7 +167,7 @@ app.post("/recording-complete", async (req, res) => {
       throw new Error("Failed to fetch audio from Twilio after multiple retries.");
     }
 
-    // NEW LINE: Log the actual Content-Type header from Twilio's response
+    // DEBUG: Log the actual Content-Type header from Twilio's response
     const actualContentType = audioResponse.headers.get('content-type');
     console.log(`🔍 Twilio Recording Content-Type: ${actualContentType}`);
 
@@ -310,7 +320,7 @@ app.post("/handle-followup", async (req, res) => {
       if (error) {
         console.error("❌ Error sending follow-up email:", error);
       } else {
-        console.log("✅ Follow-up email sent:", info.response);
+        console.log("✅ Follow-up email sent:", info.response); // NEW: Log success
       }
     });
 

@@ -17,5 +17,6 @@
     "nodemailer": "^6.9.13",
     "openai": "^4.38.2",
     "twilio": "^5.0.4"
+    "node-fetch": "^2.6.7
   }
 }

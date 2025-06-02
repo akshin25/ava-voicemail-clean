@@ -157,14 +157,18 @@ app.post("/recording-complete", async (req, res) => {
       throw new Error("Failed to fetch audio from Twilio after multiple retries.");
     }
 
-    // FIX: Change .buffer() to .arrayBuffer() and then convert to Node.js Buffer
+    // NEW LINE: Log the actual Content-Type header from Twilio's response
+    const actualContentType = audioResponse.headers.get('content-type');
+    console.log(`🔍 Twilio Recording Content-Type: ${actualContentType}`);
+
+
     const arrayBuffer = await audioResponse.arrayBuffer(); // Get data as an ArrayBuffer
     const audioBuffer = Buffer.from(arrayBuffer);          // Convert ArrayBuffer to Node.js Buffer
 
 
-    // Create a 'File' object from the buffer for OpenAI API
-    const originalname = path.basename(recordingUrl).split('?')[0] || 'recording.wav';
-    const mimetype = audioResponse.headers.get('content-type') || 'audio/wav';
+    // FIX: Explicitly set the filename and mimetype for MP3, as Twilio recordings are often MP3
+    const originalname = 'recording.mp3'; // Give it an .mp3 extension
+    const mimetype = 'audio/mpeg';      // Explicitly declare it as audio/mpeg for MP3
 
     const audioFile = new File([audioBuffer], originalname, { type: mimetype });
 

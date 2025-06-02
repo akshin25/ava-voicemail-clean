@@ -1,22 +1,26 @@
 {
-  "name": "ai-voicemail-assistant",
+  "name": "ava-voicemail-clean",
   "version": "1.0.0",
-  "description": "An AI-powered voicemail assistant.",
+  "description": "AI Voicemail Assistant backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "AI",
+    "voicemail",
+    "twilio",
+    "openai"
+  ],
+  "author": "Your Name or akshin25",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.20.2",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
+    "node-fetch": "^2.6.7",
     "nodemailer": "^6.9.13",
-    "openai": "^4.38.2",
-    "twilio": "^5.0.4"
-    "node-fetch": "^2.6.7
+    "openai": "^4.47.1",
+    "twilio": "^4.20.0"
   }
 }

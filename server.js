@@ -84,8 +84,7 @@ app.post("/voice", async (req, res) => {
     method: "POST", // Use POST for the action webhook
   });
 
-  // If the caller doesn't speak or the recording ends, hang up
-  twiml.hangup();
+  // REMOVED: twiml.hangup(); from here
 
   // Send the TwiML response back to Twilio
   res.writeHead(200, { "Content-Type": "text/xml" });

@@ -8,13 +8,14 @@ const twilio = require("twilio"); // Twilio API client library - IMPORTANT for T
 const nodemailer = require("nodemailer"); // NEW: For sending emails
 
 // NEW: Polyfill for fetch() in Node.js environments older than v18
-// If Render is running Node < 18, this is crucial.
+// Ensure 'node-fetch' is installed via npm for this.
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 
 // Polyfill for 'File' constructor in Node.js environment for OpenAI API
 // This is necessary because OpenAI's library expects a browser-like 'File' object
 // when dealing with audio files, which Node.js doesn't have natively.
+// Blob is implicitly available as File extends Blob.
 if (typeof File === 'undefined') {
   global.File = class File extends Blob {
     constructor(chunks, name, options) {
@@ -94,8 +95,6 @@ app.post("/voice", async (req, res) => {
     method: "POST", // Use POST for the action webhook
   });
 
-  // REMOVED: twiml.hangup(); from here
-
   // Send the TwiML response back to Twilio
   res.writeHead(200, { "Content-Type": "text/xml" });
   res.end(twiml.toString());
@@ -167,18 +166,15 @@ app.post("/recording-complete", async (req, res) => {
       throw new Error("Failed to fetch audio from Twilio after multiple retries.");
     }
 
-    // DEBUG: Log the actual Content-Type header from Twilio's response
-    const actualContentType = audioResponse.headers.get('content-type');
-    console.log(`🔍 Twilio Recording Content-Type: ${actualContentType}`);
-
+    // --- Dynamic filename and mimetype based on Content-Type ---
+    const contentType = audioResponse.headers.get('content-type');
+    const extension = contentType === 'audio/mpeg' ? 'mp3' : 'wav'; // Default to wav if not mpeg
+    const mimetype = contentType;
+    const originalname = `recording.${extension}`;
+    console.log(`🔍 Dynamically determined mimetype: ${mimetype}, extension: ${extension}`);
 
     const arrayBuffer = await audioResponse.arrayBuffer(); // Get data as an ArrayBuffer
     const audioBuffer = Buffer.from(arrayBuffer);          // Convert ArrayBuffer to Node.js Buffer
-
-
-    // FINAL FIX: Explicitly set the filename and mimetype for WAV, as Twilio recordings are often WAV or MP3
-    const originalname = 'recording.wav'; // Give it a .wav extension
-    const mimetype = 'audio/wav';      // Explicitly declare it as audio/wav
 
     const audioFile = new File([audioBuffer], originalname, { type: mimetype });
 
@@ -249,11 +245,11 @@ app.post("/recording-complete", async (req, res) => {
       input: 'speech', // Accept speech input
       timeout: 5, // Wait 5 seconds for speech
       action: '/handle-followup', // Send follow-up response to this endpoint
-      method: 'POST',
-    }).say({ voice: "Polly.Kevin", language="en-US" }, "Can I help with anything else regarding your message?");
+      method: "POST",
+    }).say({ voice: "Polly.Kevin", language: "en-US" }, "Can I help with anything else regarding your message?");
 
     // If the caller doesn't speak or the recording ends, hang up
-    twiml.say({ voice: "Polly.Kevin", language="en-US" }, "Goodbye.");
+    twiml.say({ voice: "Polly.Kevin", language: "en-US" }, "Goodbye.");
     twiml.hangup();
 
     res.writeHead(200, { "Content-Type": "text/xml" });
@@ -280,7 +276,7 @@ app.post("/recording-complete", async (req, res) => {
 
     // Inform the caller about the error
     const errorTwiml = new twilio.twiml.VoiceResponse();
-    errorTwiml.say({ voice: "Polly.Kevin", language="en-US" }, "I apologize, an error occurred while processing your message. Please try again later.");
+    errorTwiml.say({ voice: "Polly.Kevin", language: "en-US" }, "I apologize, an error occurred while processing your message. Please try again later.");
     errorTwiml.hangup();
     res.writeHead(500, { "Content-Type": "text/xml" });
     res.end(errorTwiml.toString());
@@ -324,9 +320,9 @@ app.post("/handle-followup", async (req, res) => {
       }
     });
 
-    twiml.say({ voice: "Polly.Kevin", language="en-US" }, `You said: "${speechResult}". I will pass this additional information along to Alex. Thank you.`);
+    twiml.say({ voice: "Polly.Kevin", language: "en-US" }, `You said: "${speechResult}". I will pass this additional information along to Alex. Thank you.`);
   } else {
-    twiml.say({ voice: "Polly.Kevin", language="en-US" }, "I didn't catch that. If you have more questions, please call back.");
+    twiml.say({ voice: "Polly.Kevin", language: "en-US" }, "I didn't catch that. If you have more questions, please call back.");
   }
   twiml.hangup(); // End the call for now
 

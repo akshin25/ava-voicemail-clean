@@ -156,7 +156,11 @@ app.post("/recording-complete", async (req, res) => {
       // This means all retries failed or an unrecoverable error occurred
       throw new Error("Failed to fetch audio from Twilio after multiple retries.");
     }
-    const audioBuffer = await audioResponse.buffer();
+
+    // FIX: Change .buffer() to .arrayBuffer() and then convert to Node.js Buffer
+    const arrayBuffer = await audioResponse.arrayBuffer(); // Get data as an ArrayBuffer
+    const audioBuffer = Buffer.from(arrayBuffer);          // Convert ArrayBuffer to Node.js Buffer
+
 
     // Create a 'File' object from the buffer for OpenAI API
     const originalname = path.basename(recordingUrl).split('?')[0] || 'recording.wav';
